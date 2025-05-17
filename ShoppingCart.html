@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <Script src="js/cart.js"></Script>
+    <script src="js/order.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            column-gap: 30px;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        table,
+        td,
+        th {
+            border: 1px solid lightgray;
+            padding: 4px;
+        }
+
+        .products {
+            display: flex;
+            gap: 10px;
+            flex-flow: row wrap;
+        }
+
+        .card {
+            box-shadow: 0 0 5px 3px rgba(0, 0, 0, .2);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            overflow:hidden;
+        }
+
+        .card-footer {
+            padding: 6px;
+        }
+
+        .btn-group {
+            display: flex;
+        }
+        .search{
+            display: flex; justify-content: center;
+            background-color: bisque;
+            padding: 10px;
+        }
+        .search #search{
+            padding: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <div class="search"><input type="text" id="search" /></div>
+        <div id="shop">
+            Product is loading...
+        </div>
+     
+    </div>
+    <div>
+        <div id="bill">
+        </div>
+        <div id="orders">   
+        </div>
+    </div>
+   
+    <script>
+        
+        /* 
+        🛒
+        */
+        let items = [
+            { "id": 10, "name": "Apple", "price": 200, "photo": "apple.jpg" },
+            { "id": 11, "name": "Orange", "price": 230, "photo": "orange.png" },
+            { "id": 12, "name": "Banana", "price": 10, "photo": "banana.png" },
+            { "id": 13, "name": "Mango", "price": 300, "photo": "mango.webp" },
+            { "id": 14, "name": "Pear", "price": 160, "photo": "pear.png" },
+            { "id": 15, "name": "Guava", "price": 120, "photo": "guava.jpg" },
+            { "id": 16, "name": "Graps", "price": 360, "photo": "graps.png" },
+        ];
+
+        let cart = new Cart("cart");
+
+        Shop(items);
+
+        function Shop(products) {
+            let html = `<div class="products">`;
+            let sn = 1;
+            let total = 0;
+            products.forEach((item) => {               
+                html += `<div class="card">
+                <div class="card-img">
+                  <img src="img/${item.photo}" height="100" />
+                </div>          
+                <div class="card-body">
+                    ${item.name} <br>   
+                  Price: ${item.price}               
+                </div>
+                <div class="card-footer">                
+                 <input type='button' onclick='cart.add(${JSON.stringify(item)});Bill()' value='🛒' />               
+               </div>
+            </div>`;
+            });
+
+            html += "</div>";
+            let shop = document.querySelector("#shop");
+            shop.innerHTML = html;
+        }
+
+       
+        function Bill() {
+            let store=cart.get();
+            let html = "<table>";
+            html += "<tr><th>SN</th><th>Name</th><th>Qty</th><th>Price</th><th>Total</th><th></th></tr>";
+            let sn = 1;
+            let total = 0;
+            if(store!=null)
+            store.forEach((item) => {
+                let lineTotal = item.qty * item.price;
+                total += lineTotal;
+                html += `<tr>
+        <td>${sn++}</td>
+        <td>${item.name}</td>
+        <td>${item.qty}</td>
+        <td>${item.price}</td>                
+        <td>${lineTotal}</td>
+        <td>
+        <div class="btn-group">
+        <input onclick='cart.inc(${item.id});Bill()' type="button" class="add" value="+"/>
+        <input onclick='cart.dec(${item.id});Bill()' type="button" class="sub" data-id="${item.id}" value="-"/>
+        <input onclick='cart.delete(${item.id});Bill()' type="button" class="delete" data-id="${item.id}" value="x"/>
+        </div>
+        </td></tr>`;
+            });
+           
+     html += `<tr>
+<th colspan="4">Total</th>
+<th>${total}</th>
+<th><input type="button" onclick="cart.clear();Bill()" value="Clear" /> </th></tr>`;
+  html+=`<tr><td>Customer</td><td><input type="text" id="customer" /></td></tr>`;
+  html+=`<tr><td>Mobile</td><td><input type="text" id="mobile" /></td></tr>`;
+  html+=`<tr><td>Address</td><td><textarea type="text" id="address" ></textarea></td></tr>`;
+  html+=`<tr><td></td><td><input type="button" onclick="processOrder()" id="btnOrder" value="Create Order" /></td></tr>`;
+html += "</table>";
+
+            let bill = document.querySelector("#bill");
+            bill.innerHTML = html;
+        }
+
+
+        let search=document.querySelector("#search");
+        search.addEventListener("input",(e)=>{           
+            let products=items.filter((item)=>{
+                return item.name.toLocaleLowerCase().includes(e.target.value.toLocaleLowerCase());
+            });
+
+            Shop(products);
+
+        });
+
+
+        Bill();
+
+
+        //Order
+        
+        let orders=new Order("Orders");
+        
+        function processOrder(){
+
+           let customer=document.querySelector("#customer").value;
+           let mobile=document.querySelector("#mobile").value;
+           let address=document.querySelector("#address").value;
+           
+           let d=new Date();
+
+           let order={
+            "id":orders.get().length+1,
+            "customer":customer,
+            "mobile":mobile,
+            "address":address,
+            "orderDate":d.toLocaleDateString(),
+            "status":"Place Order",
+            "ordreTotal":cart.getTotal(),
+            "items":cart.get()
+           }
+
+
+           orders.add(order);//webapi
+           cart.clear();
+           Bill();
+           Orders();
+        }
+        
+
+      function Orders(){
+        let store=orders.get();
+            let html = "<table>";
+            html += "<tr><th>OrderId</th><th>Customer</th><th>Mobile</th><th>Date</th><th>Status</th><th>Address</th><th>Total</th></tr>";
+           
+            let total = 0;
+            store.forEach((item) => {             
+              
+                html += `<tr>
+        <td>${item.id}</td>
+        <td>${item.customer}</td>
+        <td>${item.mobile}</td>
+        <td>${item.orderDate}</td>                
+        <td>${item.status}</td>
+        <td>${item.address}</td>
+        <td>${item.ordreTotal}</td>
+        </tr>`;
+            });           
+
+ html += "</table>";
+
+            let bill = document.querySelector("#orders");
+            bill.innerHTML = html;
+       }
+
+       Orders();
+    </script>
+</body>
+
+</html>

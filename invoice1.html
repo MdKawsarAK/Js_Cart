@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            column-gap: 30px;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        table,
+        td,
+        th {
+            border: 1px solid lightgray;
+            padding: 4px;
+        }
+
+        .products {
+            display: flex;
+            gap: 10px;
+            flex-flow: row wrap;
+        }
+
+        .card {
+            box-shadow: 0 0 5px 3px rgba(0, 0, 0, .2);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            overflow:hidden;
+        }
+
+        .card-footer {
+            padding: 6px;
+        }
+
+        .btn-group {
+            display: flex;
+        }
+        .search{
+            display: flex; justify-content: center;
+            background-color: bisque;
+            padding: 10px;
+        }
+        .search #search{
+            padding: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <div class="search"><input type="text" id="search" /></div>
+        <div id="shop">
+            Product is loading...
+        </div>
+        <form>
+            <div>
+                Name<br>
+                <input type="text" id="name" />
+            </div>
+            <div>
+                Qty<br>
+                <input type="text" id="qty" />
+            </div>
+            <div>
+                Price<br>
+                <input type="text" id="price" />
+            </div>
+            <div>
+                <input type="button" id="btn" value="Add">
+            </div>
+        </form>
+    </div>
+    <div id="bill">
+    </div>
+    <script>
+        /* 
+        🛒
+        */
+        let items = [
+            { "id": 10, "name": "Apple", "price": 200, "photo": "apple.jpg" },
+            { "id": 11, "name": "Orange", "price": 230, "photo": "orange.png" },
+            { "id": 12, "name": "Banana", "price": 10, "photo": "banana.png" },
+            { "id": 13, "name": "Mango", "price": 300, "photo": "mango.webp" },
+            { "id": 14, "name": "Pear", "price": 160, "photo": "pear.png" },
+            { "id": 15, "name": "Guava", "price": 120, "photo": "guava.jpg" },
+            { "id": 16, "name": "Graps", "price": 360, "photo": "graps.png" },
+        ];
+        let cart = [];
+
+        Shop(items);
+
+        function Shop(products) {
+            let html = `<div class="products">`;
+            let sn = 1;
+            let total = 0;
+            products.forEach((item) => {
+                html += `<div class="card">
+                <div class="card-img">
+                  <img src="img/${item.photo}" height="100" />
+                </div>          
+                <div class="card-body">
+                    ${item.name} <br>   
+                  Price: ${item.price}               
+                </div>
+                <div class="card-footer">
+                   <input type="button" onclick="add(${item.id})" value="🛒" />
+                </div>
+            </div>`;
+            });
+
+            html += "</div>";
+            let shop = document.querySelector("#shop");
+            shop.innerHTML = html;
+        }
+
+        function Bill() {
+            let html = "<table>";
+            html += "<tr><th>SN</th><th>Name</th><th>Qty</th><th>Price</th><th>Total</th><th></th></tr>";
+            let sn = 1;
+            let total = 0;
+            cart.forEach((item) => {
+                let lineTotal = item.qty * item.price;
+                total += lineTotal;
+                html += `<tr>
+        <td>${sn++}</td>
+        <td>${item.name}</td>
+        <td>${item.qty}</td>
+        <td>${item.price}</td>                
+        <td>${lineTotal}</td>
+        <td>
+        <div class="btn-group">
+        <input onclick='inc(${item.id})' type="button" class="add" value="+"/>
+        <input onclick='dec(${item.id})' type="button" class="sub" data-id="${item.id}" value="-"/>
+        <input onclick='del(${item.id})' type="button" class="delete" data-id="${item.id}" value="x"/>
+        </div>
+        </td></tr>`;
+            });
+            html += `<tr>
+<th colspan="4">Total</th>
+<th>${total}</th>
+<th><input type="button" onclick="clr()" value="Clear" /> </th></tr>`;
+            html += "</table>";
+
+            let bill = document.querySelector("#bill");
+            bill.innerHTML = html;
+        }
+
+        let btn = document.querySelector("#btn");
+        btn.addEventListener("click", (e) => {
+
+            let name = document.querySelector("#name").value;
+            let qty = document.querySelector("#qty").value;
+            let price = document.querySelector("#price").value;
+
+            cart.push({ "id": items.length + 1, "name": name, "qty": qty, "price": price });
+            Bill();
+
+        });
+
+        let search=document.querySelector("#search");
+        search.addEventListener("input",(e)=>{
+           
+            let products=items.filter((item)=>{
+                return item.name.toLocaleLowerCase().includes(e.target.value.toLocaleLowerCase());
+            });
+
+            Shop(products);
+
+        });
+
+
+
+        function add(id) {
+
+            //Search from shop
+            let item = items.find((item) => {
+                return item.id == id;
+            });
+
+            let found = cart.find((citem) => {//search from cart
+                return citem.id == item.id;
+            });
+
+            if (found != undefined) {//found
+                found.qty++;
+            } else {
+                cart.push({ id: item.id, name: item.name, qty: 1, price: item.price, photo: item.photo });
+
+            }
+            // console.log(item);           
+            Bill();
+        }
+        //increase item in the cart
+        function inc(id) {
+            //Method 1    
+            //    items.forEach((item)=>{                  
+            //       if(item.id==id){                    
+            //           item.qty=parseFloat(item.qty)+1;
+            //        }
+            //    });     
+
+            //Method 2 
+            //    var index = items.findIndex(function(item) {
+            //                     return item.id == id
+            //             });
+
+            //      items[index].qty=parseFloat(items[index].qty)+1;
+
+            //Method 3 
+            const item = cart.find((item) => item.id == id);
+            item.qty++;
+
+            Bill();
+        }
+
+        //decrease item in the cart
+        function dec(id) {
+
+            //   items.forEach((item)=>{               
+
+            //      if(item.id==id){                    
+            //          item.qty=parseFloat(item.qty)-1;
+            //       }
+            //   });    
+
+            const item = cart.find((item) => item.id == id);
+            item.qty--
+
+            if (item.qty < 1) item.qty = 1;
+
+            Bill();
+        }
+
+        function del(id) {
+            var index = cart.findIndex(function (item) {
+                return item.id == id
+            });
+
+            cart.splice(index, 1);
+
+            Bill();
+        }
+
+        function clr() {
+            cart = [];
+            Bill();
+        }
+
+    </script>
+</body>
+
+</html>
